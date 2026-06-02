@@ -1,5 +1,5 @@
 # devopstrends-actions-ci.yml
-name: devopstrends-actions-CI
+name: actions-pl-CI
 
 on:
   push:

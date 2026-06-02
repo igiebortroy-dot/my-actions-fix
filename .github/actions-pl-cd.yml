@@ -2,7 +2,7 @@ name: actions-pl-CD
 
 on:
   workflow_run:
-    workflows: ["actions-pl CD"]
+    workflows: ["actions-pl-CD"]
     types:
       - completed
 

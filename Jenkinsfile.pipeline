@@ -1,0 +1,138 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven 3.9.15'
+        jdk 'JDK21'
+    }
+
+    environment {
+        WAR_FILE = 'target/devops-trends.war'
+        DEV_URL  = 'http://localhost:8082'
+        SIT_URL  = 'http://localhost:8083'
+        UAT_URL  = 'http://localhost:8084'
+        PROD_URL = 'http://localhost:8085'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Pulling source code from GitHub...'
+                git branch: 'main',
+                    credentialsId: 'GitHubCreds',
+                    url: 'https://github.com/naomie-tech/devops-trends.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Compiling the application...'
+                bat 'mvn clean compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                bat 'mvn test'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                echo 'Packaging into WAR file...'
+                bat 'mvn package -DskipTests'
+                echo 'WAR file ready at: target/devops-trends.war'
+            }
+        }
+
+        stage('Deploy to DEV') {
+            steps {
+                echo 'Deploying to DEV — localhost:8082'
+                deploy adapters: [
+                    tomcat9(
+                        credentialsId: 'TomcatCreds',
+                        url: "${DEV_URL}"
+                    )
+                ],
+                contextPath: '/devops-trends-dev',
+                war: "${WAR_FILE}"
+                echo 'DEV live at: http://localhost:8082/devops-trends-dev'
+            }
+        }
+
+        stage('Deploy to SIT') {
+            steps {
+                echo 'Deploying to SIT — localhost:8083'
+                deploy adapters: [
+                    tomcat9(
+                        credentialsId: 'TomcatCreds',
+                        url: "${SIT_URL}"
+                    )
+                ],
+                contextPath: '/devops-trends-sit',
+                war: "${WAR_FILE}"
+                echo 'SIT live at: http://localhost:8083/devops-trends-sit'
+            }
+        }
+
+        stage('UAT Approval') {
+            steps {
+                input message: 'DEV and SIT passed. Approve deployment to UAT?',
+                      ok: 'Approve UAT'
+            }
+        }
+
+        stage('Deploy to UAT') {
+            steps {
+                echo 'Deploying to UAT — localhost:8084'
+                deploy adapters: [
+                    tomcat9(
+                        credentialsId: 'TomcatCreds',
+                        url: "${UAT_URL}"
+                    )
+                ],
+                contextPath: '/devops-trends-uat',
+                war: "${WAR_FILE}"
+                echo 'UAT live at: http://localhost:8084/devops-trends-uat'
+            }
+        }
+
+        stage('PROD Approval') {
+            steps {
+                input message: 'UAT signed off. Approve deployment to PROD?',
+                      ok: 'Deploy to PROD'
+            }
+        }
+
+        stage('Deploy to PROD') {
+            steps {
+                echo 'Deploying to PROD — localhost:8085'
+                deploy adapters: [
+                    tomcat9(
+                        credentialsId: 'TomcatCreds',
+                        url: "${PROD_URL}"
+                    )
+                ],
+                contextPath: '/devops-trends',
+                war: "${WAR_FILE}"
+                echo 'PROD live at: http://localhost:8085/devops-trends'
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo 'All environments deployed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed. No further environments received this build.'
+        }
+        always {
+            echo 'Pipeline finished. Cleaning workspace...'
+            deleteDir()
+        }
+    }
+}

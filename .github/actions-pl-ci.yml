@@ -1,4 +1,4 @@
-# devopstrends-actions-ci.yml
+actions-pl-ci.yml
 name: actions-pl-CI
 
 on:

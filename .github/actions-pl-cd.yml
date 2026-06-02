@@ -2,7 +2,7 @@ name: actions-pl-CD
 
 on:
   workflow_run:
-    workflows: ["devops-trends CD"]
+    workflows: ["actions-pl gCD"]
     types:
       - completed
 

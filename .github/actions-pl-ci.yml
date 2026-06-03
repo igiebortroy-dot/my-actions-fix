@@ -1,9 +1,8 @@
-actions-pl-ci.yml
 name: actions-pl-CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix-pipeline]
   workflow_dispatch:
 
 jobs:
@@ -28,5 +27,3 @@ jobs:
 
       - name: Package
         run: mvn package -DskipTests
-
-
